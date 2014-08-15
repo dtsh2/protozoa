@@ -1,0 +1,630 @@
+
+\documentclass{article}
+
+\usepackage{times}
+\usepackage{hyperref}
+\usepackage{tikz}
+%\usepackage{bibunits}
+\usepackage{natbib}
+\usepackage{graphics}
+\usepackage{amsmath}
+\usepackage{indentfirst}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{eurosym}
+\usepackage{todonotes}
+
+\DeclareMathOperator{\var}{var}
+\DeclareMathOperator{\cov}{cov}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{Report for the New Zealand
+Ministry of Health
+July 2013 - June 2014\\
+\vspace{2 mm} {\large David Hayman, Nigel French, Ben Phiri, Anthony Pita, Niluka Velathanthiri, Angie reynolds, mEpiLab staff, Rima Shrestha and Aparna Lal}}
+\author{mEpiLab,\\ Infectious Diseases Research Centre,\\
+Massey University Protozoa Research Unit, \\
+Hopkirk Research Institute, \\
+Institute of Veterinary, Animal and Biomedical Sciences,\\
+Massey University,\\
+Palmerston North 4442,\\
+New Zealand\\
+\href{mailto: D.T.S.Hayman@massey.ac.nz}{D.T.S.Hayman@massey.ac.nz}}  %\texttt formats the text to a typewriter style font
+%\date{3 July 2014}
+\today % is replaced with the current date
+\maketitle
+
+\section{Summary}
+
+
+\begin{itemize}
+\item 
+
+\end{itemize}
+
+\section{Background}
+
+
+\section{Risk analysis review}
+
+<<include=FALSE,echo=FALSE>>=
+require(XLConnect); library(sqldf); library(ggplot2)
+wb = loadWorkbook("C:/Users/dtshayma/Documents/Massey_2014/MoH_Crypto/2014_report/MohReportAug2014/CatchmentData.xlsx", create = TRUE)
+catchdata = readWorksheet(wb, sheet = "LabData")
+sitedata  = readWorksheet(wb, sheet = "Sites")
+
+# Create dummy variables
+# 1. Season dummy variable
+NzSeasons <- function(DATES) {
+  Sm <- as.Date("2012-12-01", format = "%Y-%m-%d") # NZ Summer starts
+  At <- as.Date("2012-03-01", format = "%Y-%m-%d") # NZ Autumn starts
+  Wn <- as.Date("2012-06-01", format = "%Y-%m-%d") # NZ Winter starts
+  Sp <- as.Date("2012-09-01", format = "%Y-%m-%d") # NZ Spring starts
+  
+  # Convert dates from any year to 2012 dates
+  d <- as.Date(strftime(DATES, format="2012-%m-%d"))  
+  ifelse (d >= Sm | d < At, "Summer",
+          ifelse (d >= At & d < Wn, "Autumn",
+                  ifelse (d >= Wn & d < Sp, "Winter", "Spring")))
+}
+catchdata$nzseason <- NzSeasons(catchdata$Dates)
+
+catchdata$Dates  <- as.Date(catchdata$Dates)
+catchdata$mon    <- format(catchdata$Dates, "%b")
+catchdata$moyr   <- format(catchdata$Dates, "%b-%y")
+catchdata$sqdate <- as.character(catchdata$Dates)
+
+
+##========================================= Descriptives =============================================== 
+# For text: Number of positive samples for each pathogen in the last four rounds of sampling (Jun 2013 - May 2014)
+sqldf("SELECT SUM(Crypto >=1) Crypto_pos,SUM(Giardia >=1) Giardia_pos, SUM(Ecoli >=1) Ecoli_pos, SUM(Campy =1) Campy_pos FROM catchdata WHERE sqdate > '2013-06-30' ")
+sqldf("SELECT COUNT(*) Samplecount FROM catchdata WHERE sqdate > '2013-06-30' ") ## Number of samples collected in the last four rounds
+sqldf("SELECT Site, SUM(Crypto >=1) Crypto_pos,SUM(Giardia >=1) Giardia_pos, SUM(Ecoli >=1) Ecoli_pos, SUM(Campy =1) Campy_pos FROM catchdata JOIN sitedata USING(Scode) WHERE sqdate > '2013-06-30' GROUP BY Site")
+@
+
+Summary of positive and negative results from all rounds of sampling {}
+
+\begin{table}[ht]
+\caption{Summary of positive and negative results from all rounds of sampling}
+\label{tab:mu}
+\begin{center}
+<<label=tab1,echo=FALSE,results=tex>>=
+table1<-sqldf("SELECT Site,  COALESCE(SUM(Crypto  < 1), 0) cr_neg,
+      COALESCE(SUM(Crypto >= 1), 0) cr_pos,
+      ROUND(SUM(Crypto >= 1)*100.0/COUNT(*),1) cr_pct,
+      COALESCE(SUM(Giardia < 1), 0) gd_neg,
+      COALESCE(SUM(Giardia >=1), 0) gd_pos,  
+      ROUND(SUM(Giardia >= 1)*100.0/COUNT(*),1) gd_pct,
+      COALESCE(SUM(Ecoli  < 100), 0) ec_neg,
+      COALESCE(SUM(Ecoli >= 100), 0) ec_pos,  
+      ROUND(SUM(Ecoli >= 250)*100.0/COUNT(*),1) ec_pct,
+      COALESCE(SUM(Campy   < 1), 0) cb_neg,
+      COALESCE(SUM(Campy >=  1), 0) cb_pos,  
+      ROUND(SUM(Campy >= 1)*100.0/COUNT(*),1) cb_pct
+      FROM catchdata a JOIN sitedata b USING(Scode) GROUP BY Site ")
+@
+\end{center}
+\end{table}
+
+
+## Figure 2. Percentage of samples taken in each month that were positive for each pathogen
+## Fig.2 Data
+modat <- sqldf("SELECT mon, (SUM(Crypto  >= 1) *100.0)/ COUNT(*) AS pos_perc, 'Cryptosporidium'  AS cate FROM catchdata GROUP BY mon 
+               UNION ALL
+               SELECT mon, (SUM(Giardia >= 1) *100.0)/ COUNT(*) AS pos_perc, 'Giardia' AS cate FROM catchdata GROUP BY mon
+               UNION ALL
+               SELECT mon, (SUM(Ecoli   >= 500)*100.0)/ COUNT(*) AS pos_perc, 'E.coli' AS cate FROM catchdata GROUP BY mon
+               UNION ALL
+               SELECT mon, (SUM(Campy   >= 1) *100.0)/ COUNT(*) AS pos_perc, 'Campylobacter' AS cate FROM catchdata GROUP BY mon")
+
+## Fig.2 Plot
+moplot <- ggplot(modat, aes(x=reorder(mon, match(mon, month.abb)), y=pos_perc, fill=cate)) +
+                 geom_bar(position="dodge", stat="identity", width=0.4, alpha=0.75) + 
+                 theme(axis.text  = element_text(size=13),
+                        axis.title = element_text(size=15)) + 
+                 xlab("Month") + ylab("Percentage of positive samples") +
+                 guides(fill = guide_legend(title = "Organism", title.theme=element_text(size=12, angle=0, face="bold"),
+                                            label.theme=element_text(size=11, angle=0, face="italic")))
+
+## Figure 3. Percent of samples taken in each month that were positive for protozoa
+## Fig.3 Data
+sitdat <- sqldf("SELECT Site, (SUM(Crypto  >= 1) *100)/ COUNT(*) AS pos_perc, 'Cryptosporidium' AS cate FROM catchdata
+                JOIN sitedata USING(Scode) GROUP BY Site HAVING pos_perc > 0
+                UNION ALL
+                SELECT Site, (SUM(Giardia >= 1) *100)/ COUNT(*) AS pos_perc, 'Giardia' AS cate FROM catchdata
+                JOIN sitedata USING(Scode) GROUP BY Site HAVING pos_perc > 0")
+
+## Fig.3 Plot
+sitplot <- ggplot(sitdat, aes(x=reorder(Site, pos_perc), y=pos_perc, fill=cate)) +
+                  geom_bar(position="dodge", stat="identity", width=0.4, alpha=1) + coord_flip() + 
+                  theme(axis.text  = element_text(size=13),  
+                          axis.title = element_text(size=15)) + 
+                  xlab("Site") + ylab("Percentage of positive samples") +
+                  guides(fill=guide_legend(title="Organism", title.theme=element_text(size=12, angle=0, face="bold"),
+                                          label.theme=element_text(size=11, angle=0, face="italic")))
+
+## Figure 4. Locations and dates of Cryptosporidium-positive samples
+## Fig.4 Data: Select rows with a count of one or more protozoa oocysts
+logcrypt <- sqldf("SELECT Scode, Site, Crypto, mon, moyr, nzseason,
+                  (CASE WHEN Crypto >= 8 THEN 'Log_cr4' ELSE 'Log_cr3' END) AS cryptlog 
+                  FROM catchdata a JOIN sitedata b USING(Scode) WHERE Crypto >=1")
+logcrypt$moyr_sort <- as.numeric(as.Date(paste('01-', logcrypt$moyr, sep=''), '%d-%b-%y'))
+
+## Fig.4 Plot
+cp <- ggplot(logcrypt, aes(x=reorder(moyr, moyr_sort), y=Crypto, fill=cryptlog)) + 
+             geom_bar(position="dodge", stat="identity", width=0.4, alpha=1) + facet_wrap(~ Site, nrow=3) +
+             theme(axis.text.x = element_text(angle = 90, size=13),
+                    axis.text.y = element_text(angle = 0,  size=13),
+                    axis.title  = element_text(size=15),
+                    strip.text  = element_text(size=12)) +
+             labs(x="Month", y=expression(paste("Count of ", italic('Cryptosporidium'), " oocysts/100L"))) +
+             scale_fill_manual(name="Log Credit", values = c("blue","red"), labels=c("Log 3", "Log 4")) +
+             guides(fill=guide_legend(title="Crypto log", title.theme=element_text(size=12, angle=0, face="bold"),
+                                label.theme=element_text(size=11, angle=0)))
+
+## Figure 5. Locations and dates of Giardia-positive samples
+## Fig.5 Data: Select rows with a count of one or more protozoa oocysts
+loggiad <- sqldf("SELECT Scode, Site, Giardia, mon, moyr, nzseason FROM catchdata a JOIN sitedata b USING(Scode) WHERE Giardia >=1")
+loggiad$moyr_sort <- as.numeric(as.Date(paste('01-', loggiad$moyr, sep=''), '%d-%b-%y'))
+
+## Fig.5 Plot
+gd <- ggplot(loggiad, aes(x=reorder(moyr, moyr_sort), y=Giardia)) + 
+             geom_bar(position="dodge", stat="identity", width=0.4, alpha=1, fill='blue') + facet_wrap(~ Site, nrow=3) +
+             theme(axis.text.x = element_text(angle = 90, size=13),
+                      axis.text.y = element_text(angle = 0,  size=13),
+                      axis.title  = element_text(size=15),
+                      strip.text  = element_text(size=12)) +
+            labs(x="Month", y=expression(paste("Count of ", italic('Giardia'), " cysts/100L"))) 
+
+## Figure 6. Locations and dates of E.coli-positive samples
+## Fig.6 Data
+logecoli <- sqldf("SELECT Scode, Site, (CASE WHEN Ecoli >= 1000 THEN 1000 ELSE Ecoli END) Ecoli, mon, moyr, nzseason,
+                  (CASE WHEN Ecoli >= 550 THEN '>=550' ELSE '<  550' END) AS ecolilog 
+                  FROM catchdata a JOIN sitedata b USING(Scode) WHERE Ecoli >= 50" )
+logecoli$moyr_sort <- as.numeric(as.Date(paste('01-', logecoli$moyr, sep=''), '%d-%b-%y'))
+
+## Fig.6 Plot
+ep <- ggplot(logecoli, aes(x=reorder(moyr, moyr_sort), y=Ecoli, fill=ecolilog)) + 
+             geom_bar(position="dodge", stat="identity", width=0.4, alpha=1) + facet_wrap(~ Site, ncol=3) +
+             theme(axis.text.x = element_text(angle = 90, size=11),
+                 axis.text.y = element_text(angle = 0,  size=11),
+                 axis.title  = element_text(size=15),
+                 strip.text  = element_text(size=12)) +
+             labs(x="Month", y=expression(paste('Count of ',italic('E. coli'),'/100mL'))) +
+             scale_fill_manual(name="Count Levels", values = c("blue","red"), labels=c("<  550", ">=550")) + 
+             guides(fill=guide_legend(title.theme=element_text(size=12, angle=0, face="bold"),
+                                      label.theme=element_text(size=11, angle=0)))
+
+## Figure 7. Count/Percent of Campylobacter-positive samples taken at each site
+## Fig.7 Percentages
+pctcampy <- sqldf("SELECT Scode, Site, Campy, SUM(Campy)*100/COUNT(*) pos_perc
+                  FROM catchdata a JOIN sitedata b USING(Scode) GROUP BY Site")
+
+cp <- ggplot(pctcampy, aes(x=reorder(Site, pos_perc), y=pos_perc)) +
+             geom_point(position="dodge", stat="identity", color='blue', size=4.5) + coord_flip() + 
+             labs(x='Site', y='Percentage of positive samples') + 
+             theme(axis.text.x = element_text(size=13),
+                   axis.text.y = element_text(size=13),
+                   axis.title  = element_text(size=15)) +
+            scale_y_continuous(minor_breaks = seq(0 , 90, 5), breaks = seq(0, 90, 10))
+
+text (\emph{Section 1}), text.... \emph{Figure 1} text (see section~\ref{sec:name}) .. (section~\ref{sub:risk_analyses} 
+\subsection{Additional risk analyses}
+\label{sub:risk_analyses}
+
+\begin{figure}
+     \centering
+     \includegraphics[width=0.8\textwidth]{incidence_1997_2014.pdf}
+     \caption{Measles incidence from 1997 to 2014}
+     \label{fig:incidence1997}
+\end{figure}
+
+text (Figure~\ref{fig:incidence1997})
+
+<<echo=FALSE>>=
+library(xtable)
+dpdf<-read.csv("mapdata.csv",header=T)
+# output top countries
+colnames(dpdf)[1]<-c("country")
+topimmigration <- dpdf[order(-dpdf$immigration),] 
+immigration<-topimmigration[1:10,c(1,4)]
+topincidence <- dpdf[order(-dpdf$incidence),] 
+incidence<-topincidence[1:10,c(1,2)]
+incidence[,2]<-round(incidence[,2],0)
+topvaccine <- dpdf[order(dpdf$cover),] 
+vaccinecover<-topvaccine[1:10,c(1,3)]
+toprisk <- dpdf[order(-dpdf$risk),] 
+risk<-(toprisk[1:10,c(1,5)])
+risk[,2]<-round(risk[,2],0)
+@
+
+\begin{table}
+\caption{Immigration numbers to New Zealand (2012)}
+<<results=tex,echo=FALSE>>=
+# This chunk uses "results=tex"
+library(Hmisc)
+latex(immigration, file="", table.env=FALSE,rowname=NULL)
+@
+\label{table:immigration12}
+\end{table}
+
+...Table \ref{table:risk12}, Figure~\ref{fig:incidence12}, ..
+
+<<echo=FALSE>>=
+# haven't had time to sort out which packages I need
+np1<-ggplot()
+@
+
+\begin{figure}[h!]
+\begin{center}
+<<fig=TRUE,echo=FALSE,width = 11>>=
+print(np1)
+@
+\end{center}
+\caption{Immigration to New Zealand 2012}
+\label{fig:immigration12}
+\end{figure}
+
+\begin{figure}[h!]
+\begin{center}
+<<fig=TRUE,echo=FALSE>>=
+change<-read.csv("change.csv",header=T)
+plot(change[18:25,1],change[18:25,4],type="l",xlab="Year",ylab="",ylim=c(0,max(change[,4])),
+     bty="n")
+ylim <- range(c(0,max(change[,4])))
+xlim <- range(change[,1])
+par(fig = c(.6, 1, 0.6, 1), mar=c(0,0,0,0), new=TRUE)
+plot(change[,1],change[,4],type="l",xlab="Year",ylab="",
+     ylim=c(0,max(change[,4])),bg="grey",add=T,bty="n")
+@
+\end{center}
+\caption{Trend in global per capita measles incidence}
+\label{fig:trendincidence}
+\end{figure}
+
+\begin{figure}[h!]
+\begin{center}
+<<fig=TRUE,echo=FALSE>>=
+ttimes<-read.csv("times.csv",header=T)
+lmres<-lm(res~time,data=ttimes)
+#summary(lmres)
+plot(ttimes$res,xaxt="n",type="l",xlab="Date",ylab="")
+axis(1, at=1:71, labels=ttimes$mydate) 
+abline(lmres,col="red",
+       lty=2)
+acf(ttimes$res,lag.max = length(ttimes$res),plot=T,main="")
+@
+\end{center}
+\caption{Trend in total immigrations into New Zealand}
+\label{fig:trendimmigration}
+\end{figure}
+
+\subsection{Risk analysis summary}
+\begin{itemize}
+\item There is a continued, and perhaps increasing, risk of measles importation due to travel and endemic measles elsewhere in the world.
+\item There may be seasonal changes in risk of measles importation, though further analyses are needed.
+\end{itemize}
+
+text \citep{wichmann9}.
+
+<<echo=FALSE>>=
+costtable1<-read.csv("costtable1.csv",header=T)
+@
+
+\begin{table}
+\caption{Estimated costs (NZ\$) for measles management in New Zealand, January 1 -- March 9, 2014 (see text for abbreviations)}
+<<results=tex,echo=FALSE>>=
+# This chunk uses "results=tex"
+library(Hmisc)
+latex(costtable1, file="", table.env=FALSE,rowname=NULL)
+@
+\label{table:direct}
+\end{table}
+
+text
+<<echo=FALSE>>=
+costtable2<-read.csv("costtable2.csv",header=T)
+@
+
+\begin{table}
+\caption{Number of cases, length of hospital day, cost, cost per case and cost per day for patients with measles as the primary diagnosis, 2008--2013}
+<<results=tex,echo=FALSE>>=
+# This chunk uses "results=tex"
+library(Hmisc)
+latex(costtable2, file="", table.env=FALSE,rowname=NULL)
+@
+\label{table:hosp}
+\end{table}
+
+.. shown in Table~\ref{table:freq}
+
+...years \citep{roberts0,roberts4}.
+
+\begin{figure}
+     \centering
+     \includegraphics[width=0.8\textwidth]{cases_by_dhb_2009_2014.pdf}
+     \caption{Measles cases by district health board (DHB) from 2009 to 2014}
+     \label{fig:dhbcases}
+\end{figure}
+
+\section{Acknowledgments}
+The authors wish to thank ...
+
+\begin{thebibliography}{}
+\bibliographystyle{plain}
+
+\bibitem[Abeywardena et al.(1993)]{abeywardena12}
+Abeywardena, H., A.~R. Jex, M.~J. Nolan, S.~R. Haydon, M.~A. Stevens, R.~W. McAnulty, and R.~B. Gasser.
+\newblock Genetic characterisation of Cryptosporidium and Giardia from dairy calves: discovery of species/genotypes consistent with those found in humans.
+\newblock \emph{Infection, Genetics and Evolution}, 12(8), 1984--1993.
+
+Alves, M., Xiao, L., Sulaiman, I., Lal, A.A., Matos, O. and Antunes, F. 2003. Subgenotype analysis of Cryptosporidium isolates from humans, cattle, and zoo ruminants in Portugal. Journal of Clinical Microbiology 41, 2744-2747.
+
+Alves, M., Xiao, L., Antunes, F. and Matos, O. 2006. Distribution of Cryptosporidium subtypes in humans and domestic and wild ruminants in Portugal. Parasitology Research 99, 287-292.
+
+Brook, E.J., Hart, C.A., French, N.P. and Christley, R.M. 2009. Molecular epidemiology of Cryptosporidium subtypes in cattle in England. The Veterinary Journal 179(3), p378-382.
+
+Caccio, S.M. 2005. Molecular epidemiology of human cryptosporidiosis. Parasitologia June 47(2), p185-192.
+
+Caccio, S.M. and Ryan, U. 2008. Molecular epidemiology of giardiasis. Molecular and Biochemical Parasitology 16, 75-80.
+
+Carter, P., McTavish, S., Brooks, H., Campbell, D., Collins-Emerson, J., Midwinter, A. and French, N. 2009. Novel clonal complexes with an unknown animal reservoir dominate Campylobacter jejuni isolates from river water in New Zealand. Applied and Environmental Microbiology 75(19), 6038-6046.
+
+Chalmers, R.M., Ferguson, C., Caccio, S., Gasser, R.B., Abs, E.L.O.Y.G., Heijnen, L., Xiao, L., Elwin, K., Hadfield, S., Sinclair, M., and Stevens, M. 2005. Direct comparison of selected methods for genetic categorisation of Cryptosporidium parvum and Cryptosporidium hominis species. International Journal of Parasitology 35, 397-410.
+
+Chalmers, R.M., Elwin, K., Thomas, A.L., Guy, E.C. and Mason, B. 2009. Long-term Cryptosporidium typing reveals the aetiology and species-specific epidemiology of human cryptosporidiosis in England and Wales, 2000-2003. Eurosurveillance 14(2).
+
+Dingle, K.E., Colles, F.M., Wareing, D.R.A., Ure, R., Fox, A.J., Bolton, F.E., Bootsma, H.J., Willems, R.J.L., Urwin, R. and Maiden, M.C.J. 2001. Multilocus sequence typing system for Campylobacter jejuni. Journal of Clinical Microbiology 39(1), 14-23.
+
+Drummond, A.J., Ashton, B., Buxton, S., Cheung, M., Cooper ,A., Duran, C., Field, M., Heled, J., Kearse, M., Markowitz ,S., Moir, R., Stones-Havas, S., Sturrock, S., Thierer, T. and Wilson, A. 2011. Geneious v5.4. Available from http://www.geneious.com
+
+Excoffier L, Laval G, Schneider S. 2005. Arlequin (version 3.0): An integrated software package for population genetics data analysis. Evol Bioinform Online 1, 47-50.
+
+Fayer, R., Santin, M., & Xiao, L. H., 2005. Cryptosporidium bovis n. sp (Apicomplexa : Cryptosporidiidae) in cattle (Bos taurus). Journal of Parasitology 91(3), 624-629.
+
+Morgan, U. M., Monis, P. T., Xiao, L. H., Limor, J., Sulaiman, I., Raidal, S., et al., 2001. Molecular and phylogenetic characterisation of Cryptosporidium from birds. International Journal for Parasitology 31(3), 289-296. 
+
+Feng, Y., Xiao, L., 2011. Zoonotic potential and molecular epidemiology of Giardia
+species and giardiasis. Clinical Microbiological Reviews 24, 110-140.
+
+Gelanew, T., Lalle, M., Hailu, A., Pozio, E. and Caccio, S.M. 2007. Molecular characterization of human isolates of Giardia duodenalis from Ethiopia. Acta Tropica 102 92-9.
+
+Glaberman, S., Moore, J.E., Lowery, C.J., Chalmers, R.M., Sulaiman, I., Elwin, K., Rooney, P.J., Millar, B.C., Dooley, J.S., Lal, A.A. and Xiao, L., 2002. Three drinking-water-associated cryptosporidiosis outbreaks, Northern Ireland. Emerging Infectious Disease 8, 631-633.
+
+Hunt, C., Ionas, G. and Brown, T. 2000. Prevalence and strain differentiation of Giardia intestinalis in calves in the Manawatu and Waikato regions of North Island, New Zealand. Veterinary Parasitology 91 7-13.
+
+Huson, D. H., & Xie, C. (2013). A poor man's BLASTX-high-throughput metagenomic protein database search using PAUDA. Bioinformatics. doi: 10.1093/bioinformatics/btt254
+
+Kingsbury, D., Marks, D., Cave, N. and Grahn, R. 2010. Identification of Tritrichomonas foetus and Giardia spp. infection in pedigree show cats in New Zealand. New Zealand Veterinary Journal 58 1 6-10.
+
+Lal, A., Baker, M.G., Hales, S., French, N.P., 2013. Potential effects of global environmental changes on cryptosporidiosis and giardiasis transmission. Trends in Parasitology 29, 83-90.
+
+Lal, A., Baker, M.G., French, N.P., Dufour, M., Hales, S., 2012a. The epidemiology of human salmonellosis in New Zealand, 1997-2008. Epidemiology and Infection 140(9), 1685-1694.
+
+Lal, A., Hales, S., French, N., Baker, M.G., 2012b. Seasonality in human zoonotic enteric diseases: a systematic review. PLoS One 7, e31883.
+
+Lake, I.R., Pearce, J. and Savill, M. 2007. The seasonality of human cryptosporidiosis in New Zealand. Epidemiology and Infection 136, 1383-1387.
+
+Learmonth, J., Ionas, G., Pita, A. and Cowie, R. 2003. Identification and genetic characterisation of Giardia and Cryptosporidium strains in humans and dairy cattle in the Waikato region of New Zealand. Water Science and Technology 47 3 21-6.
+
+Learmonth, J.J., Ionas, G., Ebbet, K.A. and Kwan, E.S. 2004. Genetic characterisation and transmission cycles of Cryptosporidium species isolated from humans in New Zealand. Applied and Environmental Microbiology 70, 3973-8.
+
+Ng,J.S., Pingault,N., Gibbs,R., Koehler,A. and Ryan,U., 2010.  Molecular characterisation of Cryptosporidium outbreaks in Western and South Australia. Experimental Parasitology 125 (4), 325-328 
+   
+Nichols, R., Campbell, B. and Smith, H. 2006. Molecular fingerprinting of Cryptosporidium oocysts isolated during water monitoring. Applied and Environmental Microbiology 72, 8.
+
+Olsen, M.E., O'Handley, R.M., Ralston, B.J., McAllister, T.A. and Thompson, R.C.A., 2004. Update on Cryptosporidium and Giardia infections in cattle. Trends in Parasitology 20(4), 185-191.
+
+Palmer, C., Traub, R., Robertson, I., Devlin, G., Rees, R. and Thompson, A., 2006. Determining the zoonotic significance of Giardia and Cryptosporidium in Australian dogs and cats. Veterinary Parasitology 154: 142-147.
+
+Peng, M.M., Wilson, M., Holland, R., Meshnick, M.L., Lal, A.A. and Xiao, L., 2003. Genetic diversity of Cryptosporidium spp. in cattle in Michigan: implications for understanding the transmission dynamics. Parasitology Research 90, 175-180.
+
+Read, C., Walters, J., Robertson, I. and Thompson, A., 2002. Correlation between genotype of Giardia duodenalis and diarrhoea. International Journal of Parasitology 32: 229-231.
+
+Ryan, U., & Cacciò, S. M., (2013). Zoonotic potential of Giardia. International journal for parasitology
+
+Wielinga, P.R., de Vries, A., van der Goot, T.H., Mank, T., Mars, M.H., Kortbeek, L.M. and van der Giessen, J.W.B., 2008. Molecular epidemiology of Cryptosporidium in humans and cattle in The Netherlands. International Journal for Parasitology 38, 809-817.
+
+Winkworth, C.L., Learmonth, J.J., Matthaei, C.D. and Townsend, C.R., 2008. Molecular characterisation of Giardia isolates from calves and humans in a region in which dairy farming has recently intensified. Applied and Environmental Microbiology 74 16 5100-5105.
+
+Yang, R., Lee, J., Ng, J. and Ryan, U., 2010. High prevalence Giardia duodenalis assemblage B and potentially zoonotic subtypes in sporadic human cases in Western Australia. International Journal for Parasitology 40 3 293-297. 
+
+Xiao, L., Bern, C., Sulaiman, I. and Lal, A., 2003. Molecular epidemiology of human cryptosporidiosis. In: Thompson, R.C.A., Armson, A., Ryan, U.M. (Eds.) Cryptosporidium: from molecules to disease. Elsevier, Amsterdam, pp. 121-146.
+
+Xiao, L. And Ryan, U.M. 2004. Cryptosporidiosis: an update in molecular epidemiology. Current Opinion in Infectious Disease 17, 483-490.
+
+
+\bibitem[Agur et al.(1993)]{agur93}
+Agur, Z., L. Cojocaru, G. Mazor, R.~M. Anderson and Y.~L. Danon (1993).
+\newblock Pulse mass measles vaccination across age cohorts.
+\newblock \emph{Proceedings of the National Academy of Sciences USA}, 90, 11698--11702.
+
+\bibitem[Anderson and May(1991)]{anderson91}
+Anderson, R.~M. and R.~M. May (1991).
+\newblock \emph{Infectious diseases of humans: dynamics and control}. Oxford: Oxford University Press.
+
+\bibitem[Anon.(2002a)]{anon2a}
+Anon. (2002a).
+\newblock \emph{Immunisation handbook}
+\newblock Wellington: Ministry of Health. pp.~131--146.
+
+\bibitem[Anon.(2002b)]{anon2b}
+Anon. (2002b).
+\newblock \emph{Infectious diseases in livestock}
+\newblock The Royal Society. pp.~68.
+
+\bibitem[Babad et al.(1995)]{babad95}
+Babad, H.~R., D.~J. Nokes, N.~J. Gay, E. Miller, P. Morgan-Capner, and R.~M. Anderson (1995).
+\newblock Predicting the impact of measles vaccination in England and Wales: model validation and analysis of policy options.
+\newblock \emph{Epidemiology and Infection}, 114, 319--344.
+
+\bibitem[Bae et al.(2013)]{bae13}
+Bae, G.~R, Y.~J. Choe, U.~Y. Go, Y.~I. Kim, and J.~K. Lee (2013). 
+\newblock Economic analysis of measles elimination program in the Republic of Korea, 2001: A cost benefit analysis study.
+\newblock \emph {Vaccine}, 31, 2661--2666.
+
+\bibitem[Carabin et al.(2002)]{carabin2}
+Carabin, H., W.~J. Edmunds, U. Kou, S. van den Hof, and V.~H. Nguyen (2002). 
+\newblock Measles in industrialized countries: a review of the average costs of adverse events and measles cases.
+\newblock \emph{BMC Public Health}, 2, 22.
+
+\bibitem[Carabin et al.(2003)]{carabin3}
+Carabin, H., W.~J. Edmunds, M. Gyldmark, P. Beutels, D. Levy-Bruhl, H. Salo, U.~K. and Griffiths (2003)
+\newblock The cost of measles in industrialised countries.
+\newblock \emph{Vaccine}, 21,4167--4177.
+
+\bibitem[Clements and Hussey(2004]{clements4}
+Clements, C.~J. and G.~D. Hussey (2004).
+\newblock Chapter 4: Measles.
+\newblock In \emph{The Global Epidemiology of Infectious Diseases},  Murray, C., A.~D. Lopez, and C.~D. Mathers, (eds.), Geneva.
+  World Health Organization, pp.~391.
+
+\bibitem[Coleman et al.(2012)]{coleman12}
+Coleman, M.~S., L. Garbat-Welch, H. Burke, M. Weinberg, K. Humbaugh, A. Tindall, and J. Cambron (2012).
+\newblock Direct costs of a single case of refugee-imported measles in Kentucky.
+\newblock \emph{Vaccine}, 30,317--321.
+
+\bibitem[Dayan et al.(2005)]{dayan5}
+G.~H. Dayan, I.~R. Ortega-Sanchez, C.~W. LeBaron, M.~P. Quinlisk, and the Iowa Measles Response Team (2005).
+\newblock The cost of containing one case of measles: the economic impact on the public health infrastructure - Iowa, 2004.
+\newblock \emph{Pediatrics}, 116:e1; DOI:10/1542/peds.2004-2512.
+
+\bibitem[Diekmann et al.(2000)]{diekmann0}
+Diekmann, O. and  J.~A.~P. Heesterbeek (2000).
+\newblock \emph{Mathematical epidemiology of infectious diseases: model building, analysis and interpretation}.
+Chichester: Wiley.
+
+\bibitem[Edmunds et al.(2000)]{edmunds0}
+Edmunds, W.~J., N.~J. Gay, M. Kretzschmar, R.~G. Pebody and H. Wachman (2000).
+\newblock The pre-vaccination epidemiology of measles, mumps and rubella in Europe: implications for modelling studies.
+\newblock \emph{Epidemiology and Infection}, 125, 635--650.
+
+\bibitem[Filia et al.(2007)]{filia7}
+Filia, A., A. Brenna, A. Pana, G.~M. Cavallaro, M. Massari and M.~L.C. degli Atti (2007).
+\newblock Health burden and economic impact of measles-related hospitalization in Italy, 2002-2003.
+\newblock \emph{BMC Public Health}, 7,169
+
+\bibitem[Flego et al.(2013)]{flego13}
+Flego, K.~L., D.~A. Belshaw, V. Sheppeard, and K.~M. Weston (2013).
+\newblock Impacts of a measles outbreak in western Sydney on public health resources.
+\newblock \emph{Communicable Diseases Intelligence Quarterly Report}, 37, E240--245.
+
+\bibitem[Gay et al.(1998)]{gay98}
+Gay, N.~J., L. Pelletier, and P. Duclos (1998).
+\newblock Modelling the incidence of measles in Canada: an assessment of the options for vaccination policy.
+\newblock \emph{Vaccine}, 16, 794--801.
+
+\bibitem[Glass et al.(2004)]{glass4}
+Glass, K., J. Kappey, and B.~T. Grenfell (2004).
+\newblock The effect of heterogeneity in measles vaccination population immunity.
+\newblock \emph{Epidemiology and Infection}, 132, 675--683.
+
+\bibitem[Klinkenberg et al.(2011)]{klinkenberg11}
+Klinkenberg, D. and H. Nishiuraa (2011).
+\newblock The correlation between infectivity and incubation period of measles, estimated from households with two cases.
+\newblock \emph{Journal of Theoretical Biology},284, 52--60
+
+\bibitem[Koopmanschap(1998)]{koopmanschap98}
+Koopmanschap, M.~A. (1998).
+\newblock Cost-of-illness studies: useful for health policy?
+\newblock \emph{Pharmacoeonomics}, 14, 143--148.
+
+\bibitem[Larg and Moss(2011)]{larg11}
+Larg, A. and J.~R. Moss (2011).
+\newblock Cost-of-illness studies: a guide to critical evaluation.
+\newblock \emph{Pharmacoeconomics}, 29,653--671.
+
+\bibitem[Mansoor et al.(1998)]{mansoor98}
+Mansoor, O., A. Blakely, M. Baker, M. Tobias, and A. Bloomfield (1998).
+\newblock A measles epidemic controlled by immunisation. 
+\newblock \emph{New Zealand Medical Journal}, 111, 467--471.
+
+\bibitem[Ortega-Sanchez et al.(2014)]{ortegasanchez14}
+Ortega-Sanchez, I.~R., M. Vijayaraghavan, A.~E. Barskey, and G.~S. Wallace (2014).
+\newblock The economic burden of sixteen measles outbreaks on United States public health departments in 2011.
+\newblock \emph{Vaccine}, 32,1311--1317.
+
+\bibitem[Obidia et al.(2012)]{obidia12}
+Obadia, T., R. Haneef and P--Y. Boelle
+\newblock The R0 package: a toolbox to estimate reproduction numbers for epidemic outbreaks.
+\newblock \emph{BMC Medical Informatics and Decision Making}, 2012, 12--147.
+
+\bibitem[Parker et al.(2006)]{parker6}
+Parker, A.~A., W. Staggs, G.~H. Dayan, I.~R. Ortega-Sanchez, P.~A. Rota, L. Lowe, P. Boardman, R. Teclaw, C. Graves, and C.~W. LeBaron (2006).
+\newblock Implications of a 2005 measles outbreak in Indiana for sustained elimination of measles in the United States.
+\newblock \emph{The New England Journal of Medicine}, 355, 447--455.
+
+\bibitem[Prouty et al.(2001)]{prouty1}
+Prouty, R.W., G. Smith and K.~C. Lakin (2001).
+\newblock Residential services for persons with developmental disabilities: status and trends through 2000.
+\newblock \emph{Minneapolis: Institute on Community Integration}, University of Minnesota, pp.~179, rtc.umn.edu/risp00.
+
+\bibitem[Roberts(2004)]{roberts4}
+Roberts, M. (2004).
+\newblock A mathematical model for measles vaccination.
+\newblock Wellington: Ministry of Health.
+
+\bibitem[Roberts and Tobias(2000)]{roberts0}
+Roberts, M.~G. and M.~I. Tobias (2000).
+\newblock Predicting and preventing measles epidemics in New Zealand: Application of a mathematical model. 
+\newblock \emph{Epidemiology and Infection}, 124, 279--287.
+
+\bibitem[Saha and Gerdtham(2013)]{saha13}
+Saha, S. and U.~G. Gerdtham (2013).
+\newblock Cost of illness studies on reproductive, maternal, newborn, and child health: a systematic literature review.
+\newblock \emph{Health Economics Review}, doi:10.1186/2191-1991-3-24.
+
+\bibitem[Siedler et al.(2006)]{siedler6}
+Siedler, A., A. Tischer, A. Mankertz, and S. Santibanez (2006).
+\newblock Two outbreaks of measles in Germany 2005.
+\newblock \emph{Eurosurveillance} 2006:11(4) article 5, \href{http://www.eurosurveillance.org/ViewArticle.aspx?ArticleId=615}{www.eurosurveillance.org}, accessed 14 June 2014.
+
+\bibitem[Stack et al.(2011)]{stack11}
+Stack, M.~L., S. Ozawa, D.~M. Bishai, A. Mirelman, Y. Tam, L. Niessen, D.~G. Walker, and O.S. Levine (2011).
+\newblock Estimated economic benefits during the 'decade of vaccine' include treatment savings, gains in labor productivity.
+\newblock \emph{Health Affairs}, 30,1021--1028.
+
+\bibitem[Statistics New Zealand(2014))]{stats14}
+\newblock \emph{Statistics New Zealand} (2014).
+http://nzdotstat.stats.govt.nz/, accessed 17 June 2014.
+
+\bibitem[Tobias and Roberts(1998)]{tobias98}
+Tobias, M.~I. and M.~G. Roberts (1998).
+\newblock Predicting and preventing measles epidemics in New Zealand: Application of a mathematical model.
+\newblock Wellington: Ministry of Health.
+
+\bibitem[Wallinga et al.(2001)]{wallinga1}
+Wallinga, J., D. Levy-Bruhl, N.~J. Gay, and C.~H. Wachman (2001).
+\newblock Estimation of measles reproduction ratios and prospects for elimination of measles by vaccination in some Western European countries.
+\newblock \emph{Epidemiology and Infection}, 127, 281--295.
+
+\bibitem[Wallinga and Teunis(2004)]{wallinga4}
+Wallinga, J., and P. Teunis (2004).
+\newblock Different Epidemic Curves for Severe Acute Respiratory Syndrome Reveal Similar Impacts of Control Measures.
+\newblock \emph{American Journal of Epidemiology}, 160, 509.
+
+\bibitem[Wichmann et al.(2009)]{wichmann9}
+Wichmann, O., A. Siedler, D. Sagebiel, W. Hellenbrand, S. Santibanez, A. Mankertz, G. Vogt, U. van Treeck, and G. Krause (2009).
+\newblock Further efforts needed to achieve measles elimination in Germany: results of an outbreak investigation.
+\newblock \emph{Bulletin of the World Health Organization}, 87, 108--115.
+
+\bibitem[Wolfson et al.(2007)]{wolfson7}
+Wolfson, L.~J., P.~M. Strebel, M. Gacic-Dobo, E.~J. Hoekstra, J.~W. McFarland, and B.~S. Hersh (2007).
+\newblock Has the 2005 measles mortality reduction goal been achieved? A natural history modelling study.
+\newblock \emph{Lancet}, 369, 191--200.
+
+\bibitem[WHO(2013)]{who13}
+World Health Organisation measles media centre, January (2013)
+\newblock Geneva: World Health Organization.
+\href{http://www.who.int/mediacentre/news/notes/2013/measles_20130117/en/}{www.who.int}, accessed July 1, 2014.
+
+\bibitem[Zhou et al.(2004)]{zhou4}
+Zhou, F, S. Reef, M. Massoudi, M.~J. Papania, H.~R. Yusuf, B. Bardenheier, L. Zimmerman, and M.~M. McCauley (2004).
+\newblock An economic analysis of the current universal 2-dose measles-mumps-rubella vaccination program in the United States.
+\newblock \emph{Journal of Infectious Diseases}, 189, S131--45.
+
+\end{thebibliography}
+
+\end{document}
