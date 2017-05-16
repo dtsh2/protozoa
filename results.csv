@@ -1,0 +1,31 @@
+Species,Host,Zoonotic,Gene,Phi,Theta
+C. meleagridis,Human,Human,gp60,0.19,0.123
+C. meleagridis,Wallaby,Other,gp60,0.055,0.06
+C. meleagridis,Cockatiel,Other,gp60,0.004,0.004
+C. meleagridis,Partridge,Other,gp60,0.003,0.003
+C. hominis,Human,Human,hsp70,0.004,0.0043
+C. hominis,Macaque,Other,hsp70,0.00095,0.00095
+C. hominis,Babbon,Other,gp60,0.214,0.205
+C. hominis,Macaque,Other,gp60,0.171,0.171
+C. hominis,Human,Human,gp60,0.158,0.084
+C. hominis,Sheep,Other,gp60,0.027,0.048
+C. hominis,Cattle,Other,gp60,0.0052,0.0076
+C. hominis,Horse,Other,gp60,0.0044,0.0044
+C. parvum,Human,Human,actin,0.035,0.042
+C. parvum,Bamboo rat,Other,actin,0.007,0.0073
+C. parvum,Yak,Other,gp60,0.096,0.085
+C. parvum,Horse,Other,gp60,0.093,0.073
+C. parvum,Human,Human,gp60,0.091,0.068
+C. parvum,Cattle,Other,gp60,0.069,0.067
+C. parvum,Sheep,Other,gp60,0.052,0.046
+C. parvum,Bamboo rat,Other,gp60,0.046,0.04
+C. parvum,Human,Human,cowp,0.017,0.035
+C. parvum,Bamboo rat,Other,cowp,0.0027,0.0037
+C. parvum,Cattle,Other,cowp,0.0011,0.0027
+C. tyzzeri,Human,Human,gp60,0.028,0.028
+C. tyzzeri,Mouse,Other,gp60,0.013,0.0075
+C. cuniculus,Human,Human,gp60,0.113,0.076
+C. cuniculus,Rabbit,Other,gp60,0.081,0.065
+C. ubiquitum,Field mouse,Other,gp60,0.13,0.129
+C. ubiquitum,Human,Human,gp60,0.053,0.046
+C. ubiquitum,Gray squirrel,Other,gp60,0.04,0.026
