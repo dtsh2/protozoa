@@ -2,39 +2,39 @@
 
 rm(list = ls())
 
-phi_data<-read.csv('results.csv',header=T)
+Pi_data<-read.csv('results.csv',header=T)
 
 library(vegan)
-# fit <- manova(cbind(Theta,Phi) ~ Zoonotic, data = phi_data)
+# fit <- manova(cbind(Theta,Pi) ~ Zoonotic, data = Pi_data)
 # summary(fit, test="Pillai")
 # summary.aov(fit)
 
-fit <- manova(cbind(Species,Gene,Phi,Theta) ~ Zoonotic, data = phi_data)
+fit <- manova(cbind(Species,Gene,Pi,Theta) ~ Zoonotic, data = Pi_data)
 summary(fit, test="Pillai")
 summary.aov(fit)
 
-fit <- manova(cbind(Species,Phi,Theta) ~ Gene, data = phi_data)
+fit <- manova(cbind(Species,Pi,Theta) ~ Gene, data = Pi_data)
 summary(fit, test="Pillai")
 summary.aov(fit)
 
 ## https://stats.stackexchange.com/questions/30788/whats-a-good-way-to-use-r-to-make-a-scatterplot-that-separates-the-data-by-trea
 
 require ("ggplot2")
- p1 <- ggplot(phi_data, aes (x = Theta, y = Phi, colour = Zoonotic)) + stat_density_2d() +
-  ylab(expression(paste(phi))) + xlab(expression(paste(theta)))
+ p1 <- ggplot(Pi_data, aes (x = Theta, y = Pi, colour = Zoonotic)) + stat_density_2d() +
+  ylab(expression(paste(Pi))) + xlab(expression(paste(theta)))
 
 # require ('hexbin')
-# ggplot(phi_data, aes (x = Theta, y = Phi, fill = Zoonotic)) + stat_binhex (bins=2, aes (alpha = 0.5)) + ## NB alpha can be count
+# ggplot(Pi_data, aes (x = Theta, y = Pi, fill = Zoonotic)) + stat_binhex (bins=2, aes (alpha = 0.5)) + ## NB alpha can be count
 #   facet_grid (. ~ Zoonotic)
 
- p2 <- ggplot(phi_data, aes(x = Theta, y = Phi, colour = Zoonotic)) + geom_point() +
-   ylab(expression(paste(phi))) + xlab(expression(paste(theta)))
-# ggplot(phi_data, aes(x = Theta, y = Phi)) + geom_point() + facet_grid(~Zoonotic)
+ p2 <- ggplot(Pi_data, aes(x = Theta, y = Pi, colour = Zoonotic)) + geom_point() +
+   ylab(expression(paste(Pi))) + xlab(expression(paste(theta)))
+# ggplot(Pi_data, aes(x = Theta, y = Pi)) + geom_point() + facet_grid(~Zoonotic)
 
- p3 <- ggplot(phi_data, aes (x = Theta, y = Phi, colour = Gene)) + stat_density_2d() +
-   ylab(expression(paste(phi))) + xlab(expression(paste(theta)))
- p4 <-ggplot(phi_data, aes(x = Theta, y = Phi, colour = Gene)) + geom_point() +
-   ylab(expression(paste(phi))) + xlab(expression(paste(theta)))
+ p3 <- ggplot(Pi_data, aes (x = Theta, y = Pi, colour = Gene)) + stat_density_2d() +
+   ylab(expression(paste(Pi))) + xlab(expression(paste(theta)))
+ p4 <-ggplot(Pi_data, aes(x = Theta, y = Pi, colour = Gene)) + geom_point() +
+   ylab(expression(paste(Pi))) + xlab(expression(paste(theta)))
  
  # Multiple plot function
  #
@@ -96,15 +96,42 @@ require ("ggplot2")
  #par(mfrow=c(2,2))
  n = 2
  cols = gg_color_hue(n)
- plot(phi_data$Zoonotic,phi_data$Phi,col=cols,ylab=expression(phi))
+ plot(Pi_data$Zoonotic,Pi_data$Pi,col=cols,ylab=expression(Pi))
  n = 4
  cols = gg_color_hue(n)
- plot(phi_data$Gene,phi_data$Phi,col=cols,ylab=expression(phi))
+ plot(Pi_data$Gene,Pi_data$Pi,col=cols,ylab=expression(Pi))
  n = 2
  cols = gg_color_hue(n)
- plot(phi_data$Zoonotic,phi_data$Theta,col=cols,ylab=expression(theta))
+ plot(Pi_data$Zoonotic,Pi_data$Theta,col=cols,ylab=expression(theta))
  n = 4
  cols = gg_color_hue(n)
- plot(phi_data$Gene,phi_data$Theta,col=cols,ylab=expression(theta))
+ plot(Pi_data$Gene,Pi_data$Theta,col=cols,ylab=expression(theta))
  
  dev.off()
+ 
+## gp60 ###
+ 
+ newdata <- Pi_data[ which(Pi_data$Gene =='gp60'), ]
+
+ pdf('gp60_zoonotic_bars.pdf',width=6,height=5) 
+ par(mfrow=c(1,2))
+ n = 2
+ cols = gg_color_hue(n)
+ plot(newdata$Zoonotic,newdata$Pi,col=cols,ylab=expression(Pi))
+ plot(newdata$Zoonotic,newdata$Theta,col=cols,ylab=expression(theta))
+ dev.off()
+ 
+ fit <- manova(cbind(Species,Pi,Theta) ~ Zoonotic, data = newdata)
+ summary(fit, test="Pillai")
+ summary.aov(fit)
+ 
+ p5 <- ggplot(newdata, aes (x = Theta, y = Pi, colour = Zoonotic)) + stat_density_2d() +
+   ylab(expression(paste(Pi))) + xlab(expression(paste(theta)))
+ 
+ p6 <- ggplot(newdata, aes(x = Theta, y = Pi, colour = Zoonotic)) + geom_point() +
+   ylab(expression(paste(Pi))) + xlab(expression(paste(theta)))
+ 
+ pdf('gp60_zoonotic_mdim.pdf',width=8,height=3) 
+ multiplot(p5, p6, cols=2)
+ dev.off()
+ 

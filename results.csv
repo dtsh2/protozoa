@@ -1,4 +1,4 @@
-Species,Host,Zoonotic,Gene,Phi,Theta
+Species,Host,Zoonotic,Gene,Pi,Theta
 C. meleagridis,Human,Human,gp60,0.19,0.123
 C. meleagridis,Wallaby,Other,gp60,0.055,0.06
 C. meleagridis,Cockatiel,Other,gp60,0.004,0.004
