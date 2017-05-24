@@ -16,7 +16,8 @@ plotTree(tree,ftype="off",main='Species')
 add.scale.bar(x=0.5,y=1)
 tiplabels(#x1, # if text
   col = colorCodes[tree$tip.label],bg=NA,frame = 'none',pch=16)
-text(x=500,'Species')
+add.simmap.legend(colors=colorCodes,vertical=T,x=0.8,y=550,
+                  y=-1,prompt=FALSE)
 
 tree = read.newick("SPSgp60.newick")
 x<-tree$tip.label
@@ -29,5 +30,6 @@ plotTree(tree,ftype="off")
 add.scale.bar(x=0.5,y=1)
 tiplabels(#x1, # if text
   col = colorCodes[tree$tip.label],bg=NA,frame = 'none',pch=16)
-text(x=500,'Host')
+add.simmap.legend(colors=colorCodes,vertical=T,x=0.8,y=550,
+                  y=-1,prompt=FALSE)
 dev.off()
