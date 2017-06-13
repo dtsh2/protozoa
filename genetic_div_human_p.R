@@ -135,3 +135,86 @@ require ("ggplot2")
  multiplot(p5, p6, cols=2)
  dev.off()
  
+ ###
+ 
+ Pi_data1<-read.csv('results1.csv',header=T)
+ 
+ pdf('gene_zoonotic_scatter_pi.pdf',width=6,height=5) 
+ #par(mfrow=c(1,2))
+ m <- rbind(c(1, 1, 2), c(1,1, 2))
+ layout(m)
+    Pi_data<-Pi_data1[1:8,]
+    x<-1:length(Pi_data[,1])
+    plot(x, Pi_data$Pi,
+      ylim=range(c(Pi_data$Pi-1.96*Pi_data$SD_Pi, Pi_data$Pi+1.96*Pi_data$SD_Pi)),
+      pch=19, xlab="Species", ylab="Mean +/- 95% CI",
+      main=expression(paste('gp60 ',Pi)),
+      col = as.numeric(Pi_data$Host),
+      xaxt='n')
+      
+ rect(0.5, -1, 2.5, 1, density = NULL, border = "grey",col=rgb(0, 0, 1,0.05))
+ rect(4.5, -1, 6.5, 1, density = NULL, border = "grey",col=rgb(0, 0, 1,0.05))
+ axis(1, at=seq(from=1.5,to=9.5,by=2), labels=Pi_data$Species[seq(from=1,to=9,by=2)])
+ arrows(x, Pi_data$Pi-1.96*Pi_data$SD_Pi, x, Pi_data$Pi+1.96*Pi_data$SD_Pi, length=0.05, angle=90, code=3,
+        col = as.numeric(Pi_data$Host))
+ legend('topright',c('Host','Human'),pch=19,col = as.numeric(Pi_data$Host),
+        bty='n') 
+
+ Pi_data<-Pi_data1[9:10,]
+ x<-1:length(Pi_data[,1])
+ plot(x, Pi_data$Pi,
+      ylim=range(c(Pi_data$Pi-1.96*Pi_data$SD_Pi, Pi_data$Pi+1.96*Pi_data$SD_Pi)),
+      xlim=c(0,2.5),
+      pch=19, xlab="Species", ylab="Mean +/- 95% CI",
+      main=expression(paste('cowp ',Pi)),
+      col = as.numeric(Pi_data$Host),
+      xaxt='n')
+ arrows(x, Pi_data$Pi-1.96*Pi_data$SD_Pi, x, Pi_data$Pi+1.96*Pi_data$SD_Pi, length=0.05, angle=90, code=3,
+        col = as.numeric(Pi_data$Host))
+ axis(1, at=seq(from=1.5,to=9.5,by=2), labels=Pi_data$Species[seq(from=1,to=9,by=2)])
+ legend('topleft',c('Host','Human'),pch=19,col = as.numeric(Pi_data$Host),
+        bty='n') 
+ dev.off()
+ 
+ ###
+ 
+ Pi_data1<-read.csv('results1.csv',header=T)
+ 
+ pdf('gene_zoonotic_scatter_theta.pdf',width=6,height=5) 
+ #par(mfrow=c(1,2))
+ m <- rbind(c(1, 1, 2), c(1,1, 2))
+ layout(m)
+ Pi_data<-Pi_data1[1:8,]
+ x<-1:length(Pi_data[,1])
+ plot(x, Pi_data$Theta,
+      ylim=range(c(Pi_data$Theta-1.96*Pi_data$SD_Theta, Pi_data$Theta+1.96*Pi_data$SD_Theta)),
+      pch=19, xlab="Species", ylab="Mean +/- 95% CI",
+      main=expression(paste('gp60 ',Theta)),
+      col = as.numeric(Pi_data$Host),
+      xaxt='n')
+ 
+ rect(0.5, -1, 2.5, 1, density = NULL, border = "grey",col=rgb(0, 0, 1,0.05))
+ rect(4.5, -1, 6.5, 1, density = NULL, border = "grey",col=rgb(0, 0, 1,0.05))
+ axis(1, at=seq(from=1.5,to=9.5,by=2), labels=Pi_data$Species[seq(from=1,to=9,by=2)])
+ arrows(x, Pi_data$Theta-1.96*Pi_data$SD_Theta, x, Pi_data$Theta+1.96*Pi_data$SD_Theta, length=0.05, angle=90, code=3,
+        col = as.numeric(Pi_data$Host))
+ legend('topright',c('Host','Human'),pch=19,col = as.numeric(Pi_data$Host),
+        bty='n') 
+ 
+ Pi_data<-Pi_data1[9:10,]
+ x<-1:length(Pi_data[,1])
+ plot(x, Pi_data$Theta,
+      ylim=range(c(Pi_data$Theta-1.96*Pi_data$SD_Theta, Pi_data$Theta+1.96*Pi_data$SD_Theta)),
+      xlim=c(0,2.5),
+      pch=19, xlab="Species", ylab="Mean +/- 95% CI",
+      main=expression(paste('cowp ',Theta)),
+      col = as.numeric(Pi_data$Host),
+      xaxt='n')
+ arrows(x, Pi_data$Theta-1.96*Pi_data$SD_Theta, x, Pi_data$Theta+1.96*Pi_data$SD_Theta, length=0.05, angle=90, code=3,
+        col = as.numeric(Pi_data$Host))
+ axis(1, at=seq(from=1.5,to=9.5,by=2), labels=Pi_data$Species[seq(from=1,to=9,by=2)])
+ legend('topleft',c('Host','Human'),pch=19,col = as.numeric(Pi_data$Host),
+        bty='n') 
+ dev.off()
+ 
+ 

@@ -1,0 +1,11 @@
+Species,Host,Gene,Pi,SD_Pi,Theta,SD_Theta
+C. meleagridis,others,gp60,0.075,0.015,0.067,0.006
+C. meleagridis,human,gp60,0.19,0.033,0.123,0.011
+C. hominis,others,gp60,0.1405,0.033,0.16,0.013
+C. hominis,human,gp60,0.158,0.003,0.084,0.006
+C. parvum,others,gp60,0.073,0.005,0.054,0.004
+C. parvum,human,gp60,0.091,0.0064,0.085,0.0046
+C. ubiquitum,others,gp60,0.105,0.022,0.093,0.0064
+C. ubiquitum,human,gp60,0.053,0.01,0.046,0.0045
+C. parvum,others,cowp,0.0011,0.0008,0.00414,0.0015
+C. parvum,human,cowp,0.017,0.0081,0.035,0.0045
