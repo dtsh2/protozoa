@@ -220,6 +220,7 @@ require ("ggplot2")
  # sample size and pi and theta
  
 sample_size_data<-read.csv('series50seq.csv',header=T)
+sample_size_data<-read.csv('series50seqv1.csv',header=T)
 s<- as.vector(as.character(sample_size_data$gp60))
 s1 = unlist(strsplit(s, split='all-', fixed=T))[seq(from=2,to=2*length(s),by=2)]
 sample_size_data$gp60<-s1
@@ -377,3 +378,26 @@ text(465,0.142,eqR2)
 
 dev.off()
 
+panel.hist <- function(x, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(usr[1:2], 0, 1.5) )
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
+}
+pairs(sample_size_data,
+      diag.panel = panel.hist)
+
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- abs(cor(x, y))
+  txt <- format(c(r, 0.123456789), digits = digits)[1]
+  txt <- paste0(prefix, txt)
+  if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+  text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+pairs(sample_size_data, lower.panel = panel.smooth, upper.panel = panel.cor)
