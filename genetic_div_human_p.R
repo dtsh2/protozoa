@@ -261,7 +261,7 @@ par(mfrow=c(3,1))
 par(mar = c(2,4,4,2) + 0.1)
 plot(x, sample_size_data$sites,
      pch=19, xlab="", ylab="",xaxt='n')
-text(580,560,'Segregating sites')
+text(580,560,'Sites')
 
 par(mar = c(2,4,4,2) + 0.1)
 plot(x, sample_size_data$Theta.W,
@@ -317,8 +317,10 @@ dev.off()
 pdf('gp60_sites_sample_size_v1_theta_pi.pdf',width=6,height=6) 
 
 ## remove larger seg sites/low sample sizes
-sample_size_data1<-sample_size_data[1:11,]
+sample_size_data1<-sample_size_data
 x11<-as.numeric(sample_size_data1$gp60)
+# sample_size_data1<-sample_size_data[1:11,]
+#  x11<-as.numeric(sample_size_data1$gp60)
 
 par(mfrow=c(2,2))
 
@@ -347,34 +349,34 @@ x12<-as.numeric(sample_size_data1$sites)
 plot(x12, sample_size_data1$Theta.W,
      ylim=range(c(sample_size_data1$Theta.W-1.96*sample_size_data1$SD.1, 
                   sample_size_data1$Theta.W+1.96*sample_size_data1$SD.1)),
-     pch=19, xlab="Segregating sites", ylab="",main = expression(paste('gp60 ',Theta)))
+     pch=19, xlab="Sites", ylab="",main = expression(paste('gp60 ',Theta)))
 arrows(x12, sample_size_data1$Theta.W-1.96*sample_size_data1$SD.1, 
        x12, sample_size_data1$Theta.W+1.96*sample_size_data1$SD.1, length=0.05, angle=90, code=3)
 model <- lm(sample_size_data1$Theta.W~x12)
-abline(model, col = "red")
+# abline(model, col = "red")
 summary(model)
 pp<-format(summary(model)$coefficients[2,4],digits = 2)
 eqpp <- bquote(bold(p == .(pp)))
-text(475,0.13,eqpp)
+text(250,0.14,eqpp)
 r2<-format(summary(model)$r.squared,digits = 2)
 eqR2 <- bquote(bold(R^2 == .(r2)))
-text(465,0.13,eqR2)
+text(250,0.12,eqR2)
 
 
 plot(x12, sample_size_data1$Pi,
      ylim=range(c(sample_size_data1$Pi-1.96*sample_size_data1$SD, 
                   sample_size_data1$Pi+1.96*sample_size_data1$SD)),
-     pch=19, xlab="Segregating sites", ylab="",main = expression(paste('gp60 ',Pi)))
+     pch=19, xlab="Sites", ylab="",main = expression(paste('gp60 ',Pi)))
 arrows(x12, sample_size_data1$Pi-1.96*sample_size_data1$SD, 
        x12, sample_size_data1$Pi+1.96*sample_size_data1$SD, length=0.05, angle=90, code=3)
 model <- lm(sample_size_data1$Pi~x12)
-abline(model, col = "grey",lty=2)
+# abline(model, col = "grey",lty=2)
 pp<-format(summary(model)$coefficients[2,4],digits = 2)
 eqpp <- bquote(bold(p == .(pp)))
-text(475,0.142,eqpp)
+text(250,0.15,eqpp)
 r2<-format(summary(model)$r.squared,digits = 2)
 eqR2 <- bquote(bold(R^2 == .(r2)))
-text(465,0.142,eqR2)
+text(250,0.14,eqR2)
 
 dev.off()
 

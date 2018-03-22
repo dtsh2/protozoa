@@ -1,0 +1,13 @@
+Gene,Species,Hosts,Tajima,Tajima_Lower_95_CI,Tajima_Upper_95_CI,R2,R2_Lower_CI,R2_Upper_CI
+gp60,meleagridis,Others,0.579,-0.33,0.36,0.211,0.115,0.16
+gp60,meleagridis,Humans,2.228,-0.45,0.41,0.213,0.109,0.145
+gp60,hominis,Others,-0.477,-0.39,0.39,0.108,0.105,0.135
+gp60,hominis,Humans,2.763,-0.39,0.42,0.157,0.072,0.093
+gp60,parvum,Others,1.134,-0.4,0.41,0.122,0.078,0.102
+gp60,parvum,Humans,0.263,-0.32,0.35,0.091,0.075,0.092
+gp60,ubiquitum,Others,0.563,-0.27,0.28,0.181,0.122,0.149
+gp60,ubiquitum,Humans,0.703,-0.34,0.36,0.192,0.118,0.163
+gp60,cuniculus,Others,0.331,-0.28,0.27,0.195,0.12,0.159
+gp60,cuniculus,Humans,2.994,-0.36,0.35,0.237,0.11,0.139
+cowp,parvum,Others,-2.232,-1.29,1.38,0.741,0.071,0.178
+cowp,parvum,Humans,-2.079,-0.59,0.57,0.16,0.102,0.152
